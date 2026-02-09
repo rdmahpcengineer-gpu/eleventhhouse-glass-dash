@@ -1,0 +1,431 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========== EHCX.ai Design System ========== */
+:root {
+  /* Core Colors */
+  --primary-dark: #0A0F19;
+  --palladian: #EEE9DF;
+  --abyssal: #0F172A;
+  --accent-blue: #3B82F6;
+  --accent-orange: #FFB162;
+
+  /* Glassmorphism */
+  --glass-standard-bg: rgba(255, 255, 255, 0.4);
+  --glass-dark-bg: rgba(30, 41, 59, 0.6);
+  --glass-brand-bg: rgba(10, 15, 25, 0.95);
+  --glass-blur: 12px;
+  --glass-border-light: rgba(255, 255, 255, 0.3);
+  --glass-border-dark: rgba(255, 255, 255, 0.1);
+
+  /* Motion */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --entrance-duration: 600ms;
+  --hover-duration: 300ms;
+}
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    @apply antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background-color: var(--palladian);
+    color: var(--primary-dark);
+  }
+
+  /* Dark mode */
+  .dark body {
+    background-color: var(--abyssal);
+    color: #fff;
+  }
+
+  /* Typography Scale */
+  h1 {
+    @apply text-4xl font-extrabold tracking-tight;
+  }
+
+  .label {
+    @apply text-xs font-bold uppercase tracking-widest;
+  }
+}
+
+@layer components {
+
+  /* ========== ENTRANCE ANIMATIONS ========== */
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-up {
+    animation: fadeUp var(--entrance-duration) var(--ease-out-quint) forwards;
+    opacity: 0;
+  }
+
+  .animate-delay-1 {
+    animation-delay: 50ms;
+  }
+
+  .animate-delay-2 {
+    animation-delay: 100ms;
+  }
+
+  .animate-delay-3 {
+    animation-delay: 150ms;
+  }
+
+  .animate-delay-4 {
+    animation-delay: 200ms;
+  }
+
+  .animate-delay-5 {
+    animation-delay: 250ms;
+  }
+
+  .animate-delay-6 {
+    animation-delay: 300ms;
+  }
+
+  .animate-delay-7 {
+    animation-delay: 350ms;
+  }
+
+  .animate-delay-8 {
+    animation-delay: 400ms;
+  }
+
+  /* ========== STATUS PULSE ANIMATION ========== */
+  @keyframes status-pulse {
+    0% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+    }
+
+    100% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+  }
+
+  .status-live {
+    animation: status-pulse 2s ease-in-out infinite;
+  }
+
+  /* ========== GLASSMORPHISM COMPONENTS ========== */
+
+  /* Standard Glass - Light mode cards */
+  .glass {
+    background: var(--glass-standard-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-light);
+  }
+
+  /* Dark Glass - Dark mode cards */
+  .glass-dark {
+    background: var(--glass-dark-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-dark);
+  }
+
+  /* Brand Glass - Sidebar, dark elements */
+  .glass-brand {
+    background: var(--glass-brand-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-dark);
+  }
+
+  /* Sidebar - Brand glass with enhanced blur */
+  .glass-sidebar {
+    background: var(--primary-dark);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border-right: 1px solid var(--glass-border-dark);
+  }
+
+  .glass-sidebar-item {
+    @apply transition-all;
+    transition-duration: var(--hover-duration);
+  }
+
+  .glass-sidebar-item-active {
+    background: rgba(59, 130, 246, 0.15);
+    border-left: 3px solid var(--accent-blue);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+  }
+
+  /* Project Cards - Enhanced glass effect with hover */
+  .glass-card {
+    background: var(--glass-standard-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-light);
+    border-radius: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all var(--hover-duration) var(--ease-out-quint);
+  }
+
+  .glass-card:hover {
+    transform: scale(1.02);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Dark mode glass card */
+  .dark .glass-card {
+    background: var(--glass-dark-bg);
+    border-color: var(--glass-border-dark);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark .glass-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Top Bar - Variable blur */
+  .glass-topbar {
+    background: var(--glass-standard-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--glass-border-light);
+  }
+
+  .dark .glass-topbar {
+    background: rgba(15, 23, 42, 0.8);
+    border-bottom-color: var(--glass-border-dark);
+  }
+
+  /* Search - Pill-shaped glass */
+  .glass-search {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border-light);
+    border-radius: 9999px;
+    transition: all var(--hover-duration) ease;
+  }
+
+  .glass-search:focus-within {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+  }
+
+  .dark .glass-search {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--glass-border-dark);
+  }
+
+  .dark .glass-search:focus-within {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--accent-blue);
+  }
+
+  /* Metric Cards */
+  .glass-metric {
+    background: var(--glass-standard-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-light);
+    border-radius: 1.25rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    transition: all var(--hover-duration) var(--ease-out-quint);
+  }
+
+  .glass-metric:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  .dark .glass-metric {
+    background: var(--glass-dark-bg);
+    border-color: var(--glass-border-dark);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Welcome Banner */
+  .glass-banner {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(255, 177, 98, 0.15) 100%);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-light);
+    border-radius: 2rem;
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+  }
+
+  /* Icon Buttons - Rounded-xl containers */
+  .glass-icon-btn {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--glass-border-light);
+    border-radius: 0.75rem;
+    transition: all var(--hover-duration) ease;
+  }
+
+  .glass-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.7);
+    transform: scale(1.05);
+  }
+
+  .dark .glass-icon-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--glass-border-dark);
+  }
+
+  .dark .glass-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Primary Action Button */
+  .glass-btn-primary {
+    background: linear-gradient(135deg, var(--accent-blue) 0%, #2563EB 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    transition: all var(--hover-duration) var(--ease-out-quint);
+  }
+
+  .glass-btn-primary:hover {
+    box-shadow: 0 6px 24px rgba(59, 130, 246, 0.5);
+    transform: translateY(-2px);
+  }
+
+  /* Secondary/Warning Button */
+  .glass-btn-warning {
+    background: linear-gradient(135deg, var(--accent-orange) 0%, #F59E0B 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(255, 177, 98, 0.3);
+    transition: all var(--hover-duration) var(--ease-out-quint);
+  }
+
+  .glass-btn-warning:hover {
+    box-shadow: 0 6px 24px rgba(255, 177, 98, 0.5);
+    transform: translateY(-2px);
+  }
+
+  /* Progress Bar with Accent Blue */
+  .progress-bar {
+    background: rgba(59, 130, 246, 0.2);
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    background: linear-gradient(90deg, var(--accent-blue), #60A5FA);
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.5s var(--ease-out-quint);
+  }
+
+  .progress-bar-warning {
+    background: linear-gradient(90deg, var(--accent-orange), #FBBF24);
+  }
+
+  /* Gradient text using brand colors */
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-500 to-orange-400 bg-clip-text text-transparent;
+  }
+
+  /* Timeline elements */
+  .glass-timeline {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .glass-timeline-guide {
+    border-left: 2px dashed rgba(59, 130, 246, 0.3);
+  }
+
+  .glass-timeline-pill {
+    background: var(--glass-standard-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border-light);
+    border-radius: 9999px;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Glass text utilities */
+  .text-glass-primary {
+    color: var(--primary-dark);
+  }
+
+  .dark .text-glass-primary {
+    @apply text-white;
+  }
+
+  .text-glass-secondary {
+    color: rgba(10, 15, 25, 0.7);
+  }
+
+  .dark .text-glass-secondary {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .text-glass-muted {
+    color: rgba(10, 15, 25, 0.5);
+  }
+
+  .dark .text-glass-muted {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  /* Accent colors */
+  .text-accent-blue {
+    color: var(--accent-blue);
+  }
+
+  .text-accent-orange {
+    color: var(--accent-orange);
+  }
+
+  .bg-accent-blue {
+    background-color: var(--accent-blue);
+  }
+
+  .bg-accent-orange {
+    background-color: var(--accent-orange);
+  }
+
+  /* Background utilities for dashboard */
+  .bg-dashboard {
+    background-color: var(--palladian);
+    min-height: 100vh;
+  }
+
+  .dark .bg-dashboard {
+    background-color: var(--abyssal);
+  }
+
+  /* Layout utilities */
+  .sidebar-width {
+    width: 256px;
+    /* w-64 */
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "EHCX.ai - Eleventh House AI Experience Cloud-v1",
+  "description": "The AI Contact Center that runs itself. No IT team required. Next-generation cloud-based customer experience platform by Eleventh House AI featuring AI-human voice and 24/7 global support.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
