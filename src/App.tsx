@@ -19,6 +19,8 @@ import Footer from './components/Footer';
 // Auth Pages
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import CheckoutSuccess from './pages/CheckoutSuccess';
+import CheckoutCancel from './pages/CheckoutCancel';
 
 // Dashboard
 import DashboardLayout from './components/dashboard/DashboardLayout';
@@ -180,6 +182,10 @@ const App: React.FC = () => {
             <Route path="onboarding" element={<Onboarding />} />
             <Route path="chatroom" element={<Chatroom />} />
           </Route>
+
+          {/* Checkout flow */}
+          <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route path="/checkout/cancel" element={<CheckoutCancel />} />
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Check, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { redirectToCheckout } from '../lib/stripe';
+import { trackPricingCTAClick, trackCheckoutStarted } from '../lib/analytics';
 
 interface PricingTier {
   name: string;
@@ -72,9 +74,34 @@ const tiers: PricingTier[] = [
 ];
 
 function PricingCard({ tier, isAnnual }: { tier: PricingTier; isAnnual: boolean }) {
+  const [loading, setLoading] = useState(false);
   const displayPrice = typeof tier.price === 'number' && isAnnual
     ? Math.round(tier.price * 0.8)
     : tier.price;
+
+  function handleCTAClick() {
+    const tierKey = tier.name.toLowerCase();
+    const billingCycle = isAnnual ? 'annual' : 'monthly';
+    trackPricingCTAClick(tier.name, billingCycle);
+
+    // Scale tier → scroll to contact sales
+    if (tierKey === 'scale') {
+      document.querySelector('#contact-sales')?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+
+    const price = typeof tier.price === 'number'
+      ? (isAnnual ? Math.round(tier.price * 0.8) : tier.price)
+      : 0;
+    trackCheckoutStarted(tier.name, price, billingCycle);
+
+    setLoading(true);
+    const redirected = redirectToCheckout(tier.name, isAnnual);
+    if (!redirected) {
+      // Stripe links not configured — fall back to signup
+      window.location.href = '/signup?plan=' + tierKey + '&billing=' + billingCycle;
+    }
+  }
 
   return (
     <div
@@ -129,14 +156,16 @@ function PricingCard({ tier, isAnnual }: { tier: PricingTier; isAnnual: boolean 
       </div>
 
       <button
+        onClick={handleCTAClick}
+        disabled={loading}
         className={cn(
-          'w-full py-4 rounded-2xl font-black text-sm tracking-widest uppercase mb-8 transition-all active:scale-95',
+          'w-full py-4 rounded-2xl font-black text-sm tracking-widest uppercase mb-8 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-wait',
           tier.highlighted
             ? 'bg-white text-black hover:bg-gray-100'
             : 'bg-black text-white hover:bg-gray-800'
         )}
       >
-        {tier.cta}
+        {loading ? 'Redirecting...' : tier.cta}
       </button>
 
       <ul className="space-y-3 flex-1">
@@ -214,7 +243,7 @@ const Pricing: React.FC = () => {
         </div>
 
         {/* Enterprise CTA */}
-        <div className="mt-16 text-center p-8 rounded-[2.5rem] bg-gray-50 border border-gray-200 max-w-4xl mx-auto">
+        <div id="contact-sales" className="mt-16 text-center p-8 rounded-[2.5rem] bg-gray-50 border border-gray-200 max-w-4xl mx-auto">
           <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">
             Need Enterprise Features?
           </h3>

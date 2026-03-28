@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client';
 import { AuthProvider } from 'react-oidc-context';
 import App from './App';
 import './index.css';
+import { initAnalytics } from './lib/analytics';
+
+initAnalytics();
 
 const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID;
 const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
