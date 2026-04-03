@@ -338,7 +338,7 @@ function AuthScreen({ onLogin }) {
       if (isSignUp) {
         const res = await supabase.signUp(email, password, { first_name: firstName, last_name: lastName });
         if (res.user) {
-          await supabase.insert("investors", { auth_id: res.user.id, email, first_name: firstName, last_name: lastName, status: "active", onboarded_at: new Date().toISOString() });
+          await supabase.insert("investors", { auth_user_id: res.user.id, email, full_name: `${firstName} ${lastName}`, status: "active", onboarded_at: new Date().toISOString() });
           await supabase.insert("activity_log", { actor_id: res.user.id, actor_type: "investor", action: "Account created", resource_type: "system" }).catch(() => {});
           onLogin(res.user);
         }
@@ -411,7 +411,7 @@ function Sidebar({ nav, active, setActive, user, role, onLogout }) {
       </nav>
       <div style={{ padding: "12px 10px", borderTop: `1px solid ${T.border}` }}>
         <div style={{ padding: "8px 11px", marginBottom: 6 }}>
-          <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{user?.user_metadata?.first_name || user?.email?.split("@")[0]}</div>
+          <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{user?.user_metadata?.full_name || user?.email?.split("@")[0]}</div>
           <div style={{ fontSize: 11, color: T.textGhost, marginTop: 1 }}>{user?.email}</div>
         </div>
         <button onClick={onLogout} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "7px 11px", border: "none", borderRadius: 7, background: "transparent", color: T.textGhost, fontSize: 12, cursor: "pointer", fontFamily: font }}>{I.out} Sign Out</button>
@@ -500,7 +500,7 @@ function AdminInvestors({ investors, refetch }) {
     setSending(true);
     try {
       await supabase.insert("investors", {
-        email, first_name: firstName, last_name: lastName,
+        email, full_name: `${firstName} ${lastName}`,
         relationship, status: "invited", investor_type: "non_accredited"
       });
       if (SEND_INVITE_URL) {
@@ -546,7 +546,7 @@ function AdminInvestors({ investors, refetch }) {
             <tbody>
               {investors.map((inv, i) => (
                 <tr key={inv.id} style={{ borderBottom: i < investors.length - 1 ? `1px solid ${T.border}` : "none" }}>
-                  <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: T.text }}>{inv.first_name} {inv.last_name}</td>
+                  <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: T.text }}>{inv.full_name}</td>
                   <td style={{ padding: "12px 16px", fontSize: 13, color: T.textSec }}>{inv.email}</td>
                   <td style={{ padding: "12px 16px" }}><Badge color={T.accent}>{inv.investor_type || "non-accredited"}</Badge></td>
                   <td style={{ padding: "12px 16px", fontSize: 13, color: T.textDim }}>{inv.relationship || "—"}</td>
@@ -609,12 +609,12 @@ function AdminSendSafe({ investors, safes, refetchSafes }) {
       });
       const inv = investors.find(i => i.id === selectedInvestor);
       await supabase.insert("documents", {
-        title: `SAFE Agreement — ${inv?.first_name} ${inv?.last_name}`,
+        title: `SAFE Agreement — ${inv?.full_name}`,
         doc_type: "safe",
         status: "pending_signature",
         requires_signature: true,
         file_path: `safes/${selectedInvestor}_safe.pdf`,
-        file_name: `EH_SAFE_${inv?.last_name}_${Date.now()}.pdf`,
+        file_name: `EH_SAFE_${inv?.full_name?.replace(/\s/g,'_')}_${Date.now()}.pdf`,
         visibility: "specific_investors",
         uploaded_by: supabase.user?.id,
         description: `SAFE for $${Number(amount).toLocaleString()} at $${(SAFE_TERMS.valuation_cap / 1e6).toFixed(1)}M cap, ${SAFE_TERMS.discount_rate}% discount.`
@@ -630,10 +630,10 @@ function AdminSendSafe({ investors, safes, refetchSafes }) {
       }
       await supabase.insert("activity_log", {
         actor_id: supabase.user?.id, actor_type: "founder",
-        action: `Sent SAFE to ${inv?.first_name} ${inv?.last_name} for $${Number(amount).toLocaleString()}`,
+        action: `Sent SAFE to ${inv?.full_name} for $${Number(amount).toLocaleString()}`,
         resource_type: "safe"
       }).catch(() => {});
-      setToast({ message: `SAFE sent to ${inv?.first_name} ${inv?.last_name}`, type: "success" });
+      setToast({ message: `SAFE sent to ${inv?.full_name}`, type: "success" });
       setSelectedInvestor(""); setAmount("");
       refetchSafes();
     } catch (e) { setToast({ message: e.message, type: "error" }); }
@@ -657,7 +657,7 @@ function AdminSendSafe({ investors, safes, refetchSafes }) {
               style={{ width: "100%", padding: "11px 14px", background: T.bgSurface, border: `1px solid ${T.border}`, borderRadius: 9, color: T.text, fontSize: 14, fontFamily: font, outline: "none", boxSizing: "border-box" }}>
               <option value="">Select investor...</option>
               {eligibleInvestors.map(inv => (
-                <option key={inv.id} value={inv.id}>{inv.first_name} {inv.last_name} ({inv.email})</option>
+                <option key={inv.id} value={inv.id}>{inv.full_name} ({inv.email})</option>
               ))}
             </select>
           </div>
@@ -706,7 +706,7 @@ function AdminSendSafe({ investors, safes, refetchSafes }) {
                 const inv = investors.find(inv => inv.id === s.investor_id);
                 return (
                   <tr key={s.id} style={{ borderBottom: i < safes.length - 1 ? `1px solid ${T.border}` : "none" }}>
-                    <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: T.text }}>{inv ? `${inv.first_name} ${inv.last_name}` : "—"}</td>
+                    <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: T.text }}>{inv ? inv.full_name : "—"}</td>
                     <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 700, color: T.green, fontFamily: mono }}>${Number(s.investment_amount).toLocaleString()}</td>
                     <td style={{ padding: "12px 16px", fontSize: 13, color: T.textSec, fontFamily: mono }}>${(Number(s.valuation_cap) / 1e6).toFixed(1)}M</td>
                     <td style={{ padding: "12px 16px", fontSize: 13, color: T.textSec }}>{s.discount_rate}%</td>
@@ -850,7 +850,7 @@ function AdminDocuments({ documents, investors, refetchDocs }) {
 
 // ─── SHARED: CAP TABLE ──────────────────────────────────────
 function CapTableView() {
-  const { data: capTable, loading } = useSupabase("cap_table", { order: "holder_type.asc" });
+  const { data: capTable, loading } = useSupabase("cap_table", { order: "stakeholder_type.asc" });
   const total = capTable.reduce((a, r) => a + Number(r.units_authorized || 0), 0) || 10000000;
 
   return (
@@ -871,7 +871,7 @@ function CapTableView() {
             ];
             return (
               <div key={i} style={{ width: `${pct}%`, background: colors[i % colors.length], display: "flex", alignItems: "center", justifyContent: "center", fontSize: pct > 10 ? 11 : 9, fontWeight: 700, color: "#fff", minWidth: pct > 3 ? "auto" : 0 }}>
-                {pct > 8 ? `${row.holder_name?.split(" ")[0]} — ${pct.toFixed(0)}%` : ""}
+                {pct > 8 ? `${row.stakeholder_name?.split(" ")[0]} — ${pct.toFixed(0)}%` : ""}
               </div>
             );
           })}
@@ -882,7 +882,7 @@ function CapTableView() {
             return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 9, height: 9, borderRadius: 3, background: dotColors[i % dotColors.length] }}/>
-                <span style={{ fontSize: 12, color: T.textDim }}>{row.holder_name} ({Number(row.units_authorized).toLocaleString()})</span>
+                <span style={{ fontSize: 12, color: T.textDim }}>{row.stakeholder_name} ({Number(row.units_authorized).toLocaleString()})</span>
               </div>
             );
           })}
@@ -905,16 +905,16 @@ function CapTableView() {
                 <tbody>
                   {capTable.map((row, i) => {
                     const pct = ((Number(row.units_authorized) / total) * 100).toFixed(1);
-                    const typeColor = { founder: T.accent, pool: T.purple, investor: T.green, advisor: T.amber, employee: T.pink };
+                    const typeColor = { founder: T.accent, pool: T.purple, investor: T.green, advisor: T.amber, employee: T.pink }; // stakeholder_type values
                     return (
                       <tr key={row.id || i} style={{ borderBottom: i < capTable.length - 1 ? `1px solid ${T.border}` : "none" }}>
-                        <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: T.text }}>{row.holder_name}</td>
-                        <td style={{ padding: "12px 16px" }}><Badge color={typeColor[row.holder_type] || T.textDim}>{row.holder_type}</Badge></td>
+                        <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: T.text }}>{row.stakeholder_name}</td>
+                        <td style={{ padding: "12px 16px" }}><Badge color={typeColor[row.stakeholder_type] || T.textDim}>{row.stakeholder_type}</Badge></td>
                         <td style={{ padding: "12px 16px", fontSize: 12, color: T.textSec }}>{row.instrument_type?.replace(/_/g, " ")}</td>
                         <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: T.text, fontFamily: mono }}>{Number(row.units_authorized).toLocaleString()}</td>
                         <td style={{ padding: "12px 16px", fontSize: 14, fontWeight: 700, color: T.text, fontFamily: mono }}>{pct}%</td>
                         <td style={{ padding: "12px 16px", fontSize: 12, color: T.textDim }}>
-                          {row.consideration_type !== "none" ? `$${Number(row.total_consideration).toLocaleString()} (${row.consideration_type?.replace(/_/g, " ")})` : "—"}
+                          {row.consideration_type !== "none" ? `$${Number(row.consideration).toLocaleString()} (${row.consideration_type?.replace(/_/g, " ")})` : "—"}
                         </td>
                         <td style={{ padding: "12px 16px", fontSize: 12, color: T.textGhost, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.notes || "—"}</td>
                       </tr>
