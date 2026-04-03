@@ -43,11 +43,6 @@ import Chatroom from './pages/dashboard/Chatroom';
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
-  // DEV BYPASS for testing
-  if (import.meta.env.DEV) {
-    return <>{children}</>;
-  }
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
