@@ -28,16 +28,43 @@
 
 ## Test Run Results
 
-### Environment Constraint
-Tests were executed against the live Amplify URL via Playwright. The CI/sandbox environment has a restricted outbound proxy that blocks `*.amplifyapp.com`. All findings below are based on **static code analysis** of the deployed codebase combined with **infrastructure probing**.
+**Run date:** 2026-04-04  
+**Command:** `npx playwright test --reporter=list`  
+**Result: 0 passed / 45 failed (45/45)**
 
-To run the full Playwright suite yourself:
+### Root Cause — CRIT-01 Confirmed by Live Run
+
+Every test fails immediately with:
+```
+Error: page.goto: net::ERR_INVALID_AUTH_CREDENTIALS
+  at https://v2-webapp.d1tsm8kwwa2wqc.amplifyapp.com/
+```
+
+Amplify Access Control (HTTP Basic Auth) is active on the deployment branch. The browser is challenged with a `401 WWW-Authenticate` before any page content loads, blocking all 45 tests at the navigation step. **No application code is reachable.**
+
+To unblock all tests, disable Amplify Access Control (see CRIT-01 remediation below), then re-run:
 ```bash
-cd eleventhhouse-glass-dash
 npx playwright test
-# or with basic auth if enabled:
+# or if keeping Basic Auth on staging:
 AMPLIFY_BASIC_AUTH_USER=<user> AMPLIFY_BASIC_AUTH_PASS=<pass> npx playwright test
 ```
+
+### Expected results once CRIT-01 is resolved
+
+Based on static code analysis, the anticipated pass/fail breakdown after disabling Basic Auth:
+
+| Suite | Expected Pass | Expected Fail | Reason for Fails |
+|---|---|---|---|
+| Landing page (TC-LP-01–10) | 9 | 1 | TC-LP-06: Investor Login button missing |
+| Login flow (TC-LG-01–07) | 7 | 0 | — |
+| Signup flow (TC-SU-01–07) | 7 | 0 | — |
+| Dashboard protection (TC-DB-01–05) | 5 | 0 | — |
+| Admin dashboard (TC-AD-01–02) | 0 | 2 | Route not implemented |
+| Investor dashboard (TC-IV-01–03) | 0 | 3 | Route not implemented |
+| Routing (TC-RT-01–05) | 5 | 0 | — |
+| HTTPS (TC-SEC-01–02) | 2 | 0 | — |
+| Infrastructure (TC-INF-01–04) | 3 | 1 | TC-INF-01: Basic Auth still active |
+| **TOTAL** | **38** | **7** | |
 
 ---
 
