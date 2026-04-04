@@ -57,7 +57,7 @@ const CardHeader = React.forwardRef<
 CardHeader.displayName = 'CardHeader';
 
 const CardTitle = React.forwardRef<
-  HTMLParagraphElement,
+  HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement> & { glass?: boolean }
 >(({ className, glass = false, ...props }, ref) => (
   <h3
