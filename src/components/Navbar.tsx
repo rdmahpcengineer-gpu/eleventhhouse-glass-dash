@@ -40,6 +40,12 @@ const Navbar: React.FC = () => {
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
             <Link
+              to="/investor"
+              className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-black border border-gray-200 rounded-full transition-colors"
+            >
+              Investor Portal
+            </Link>
+            <Link
               to="/login"
               className="px-6 py-2.5 text-sm font-bold text-gray-700 hover:text-black transition-colors"
             >
@@ -78,6 +84,13 @@ const Navbar: React.FC = () => {
               </a>
             ))}
             <div className="pt-4 space-y-3">
+              <Link
+                to="/investor"
+                onClick={() => setIsOpen(false)}
+                className="block w-full text-center px-6 py-3 text-sm font-bold text-gray-500 hover:text-black transition-colors border border-gray-200 rounded-xl"
+              >
+                Investor Portal
+              </Link>
               <Link
                 to="/login"
                 onClick={() => setIsOpen(false)}

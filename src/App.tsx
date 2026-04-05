@@ -19,6 +19,9 @@ import Footer from './components/Footer';
 // Auth Pages
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+
+// Investor Portal
+import InvestorPortal from './pages/InvestorPortal';
 import CheckoutSuccess from './pages/CheckoutSuccess';
 import CheckoutCancel from './pages/CheckoutCancel';
 
@@ -39,11 +42,6 @@ import Chatroom from './pages/dashboard/Chatroom';
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-
-  // DEV BYPASS for testing
-  if (import.meta.env.DEV) {
-    return <>{children}</>;
-  }
 
   if (isLoading) {
     return (
@@ -182,6 +180,9 @@ const App: React.FC = () => {
             <Route path="onboarding" element={<Onboarding />} />
             <Route path="chatroom" element={<Chatroom />} />
           </Route>
+
+          {/* Investor Portal — public route with its own Supabase auth */}
+          <Route path="/investor" element={<InvestorPortal />} />
 
           {/* Checkout flow */}
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
