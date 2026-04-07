@@ -450,9 +450,7 @@ function Sidebar({ nav, active, setActive, user, role, onLogout }) {
       </nav>
       <div style={{ padding: "12px 10px", borderTop: `1px solid ${T.border}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 11px", marginBottom: 6 }}>
-          <div style={{ width: 34, height: 34, borderRadius: "50%", background: `linear-gradient(135deg, ${T.accent}, ${T.purple})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff", flexShrink: 0, textTransform: "uppercase" }}>
-            {(user?.user_metadata?.full_name || user?.email || "?").charAt(0)}
-          </div>
+          <img src={user?.user_metadata?.avatar_url || "https://cdn.builder.io/api/v1/image/assets%2Fb6c7a723437143309f344fb2ca7f7a7e%2F8d8b64d868c04e3994d9fe94afc8454d?format=webp&width=80&height=80"} alt="" style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: `2px solid ${T.border}` }}/>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 13, color: T.text, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.user_metadata?.full_name || user?.email?.split("@")[0]}</div>
             <div style={{ fontSize: 11, color: T.textGhost, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
