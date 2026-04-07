@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
@@ -13,6 +12,7 @@ const NAV_ITEMS = [
   { icon: '🔌', label: 'Integrations', to: '/dashboard/integrations' },
   { icon: '⚙️', label: 'Settings', to: '/dashboard/settings' },
   { icon: '💳', label: 'Billing', to: '/dashboard/billing' },
+  { icon: '📐', label: 'Architecture', to: '/dashboard/architecture' },
 ];
 
 export const Sidebar: React.FC = () => {

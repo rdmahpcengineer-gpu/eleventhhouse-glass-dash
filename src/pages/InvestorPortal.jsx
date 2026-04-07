@@ -161,6 +161,11 @@ class SupabaseClient {
 
   // ─── REALTIME ───────────────────────────────────────────
   subscribe(table, callback) {
+    // Supabase Realtime requires JWT anon key; publishable keys (sb_publishable_*) aren't supported
+    if (!this.key || !this.key.startsWith("eyJ")) {
+      console.info(`[Realtime] ${table}: skipped (key format not supported by Realtime WebSocket)`);
+      return () => {};
+    }
     const self = this;
     const topic = `realtime:public:${table}`;
     let heartbeatRef = 0;
