@@ -221,6 +221,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signup(email: string, password: string, name: string) {
     setError(null);
+    const nameParts = name.trim().split(/\s+/);
+    const givenName = nameParts[0];
+    const familyName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : givenName;
     await cognitoRequest('SignUp', {
       ClientId: CLIENT_ID,
       Username: email,
@@ -228,6 +231,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       UserAttributes: [
         { Name: 'email', Value: email },
         { Name: 'name', Value: name },
+        { Name: 'given_name', Value: givenName },
+        { Name: 'family_name', Value: familyName },
       ],
     });
     return { needsConfirmation: true };
