@@ -8,14 +8,14 @@ frontend:
         - npm ci
     build:
       commands:
-        - echo "VITE_INVESTOR_SUPABASE_URL=$VITE_INVESTOR_SUPABASE_URL" >> .env
-        - echo "VITE_INVESTOR_SUPABASE_ANON_KEY=$VITE_INVESTOR_SUPABASE_ANON_KEY" >> .env
-        - echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" >> .env
-        - echo "VITE_COGNITO_CLIENT_ID=$VITE_COGNITO_CLIENT_ID" >> .env
-        - echo "VITE_COGNITO_DOMAIN=$VITE_COGNITO_DOMAIN" >> .env
-        - echo "VITE_COGNITO_USER_POOL_ID=$VITE_COGNITO_USER_POOL_ID" >> .env
-        - echo "VITE_REDIRECT_URI=$VITE_REDIRECT_URI" >> .env
-        - echo "VITE_LOGOUT_URI=$VITE_LOGOUT_URI" >> .env
+        - echo "VITE_INVESTOR_SUPABASE_URL=$VITE_INVESTOR_SUPABASE_URL" > .env.production
+        - echo "VITE_INVESTOR_SUPABASE_ANON_KEY=$VITE_INVESTOR_SUPABASE_ANON_KEY" >> .env.production
+        - echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" >> .env.production
+        - echo "VITE_COGNITO_CLIENT_ID=$VITE_COGNITO_CLIENT_ID" >> .env.production
+        - echo "VITE_COGNITO_DOMAIN=$VITE_COGNITO_DOMAIN" >> .env.production
+        - echo "VITE_COGNITO_USER_POOL_ID=$VITE_COGNITO_USER_POOL_ID" >> .env.production
+        - echo "VITE_REDIRECT_URI=$VITE_REDIRECT_URI" >> .env.production
+        - echo "VITE_LOGOUT_URI=$VITE_LOGOUT_URI" >> .env.production
         - npm run build
   artifacts:
     baseDirectory: dist
