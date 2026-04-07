@@ -38,6 +38,7 @@ import Settings from './pages/dashboard/Settings';
 import Billing from './pages/dashboard/Billing';
 import Onboarding from './pages/dashboard/Onboarding';
 import Chatroom from './pages/dashboard/Chatroom';
+import Architecture from './pages/dashboard/Architecture';
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -179,6 +180,7 @@ const App: React.FC = () => {
             <Route path="billing" element={<Billing />} />
             <Route path="onboarding" element={<Onboarding />} />
             <Route path="chatroom" element={<Chatroom />} />
+            <Route path="architecture" element={<Architecture />} />
           </Route>
 
           {/* Investor Portal — public route with its own Supabase auth */}
