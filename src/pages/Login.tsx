@@ -10,6 +10,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [givenName, setGivenName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -45,10 +46,14 @@ export default function Login() {
     if (!newPassword) { setError('Please enter a new password.'); return; }
     if (newPassword !== confirmNewPassword) { setError('Passwords do not match.'); return; }
     if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (!givenName.trim()) { setError('Please enter your name.'); return; }
     setSubmitting(true);
     setError('');
     try {
-      await completeNewPassword(newPassword);
+      await completeNewPassword(newPassword, {
+        given_name: givenName.trim(),
+        name: givenName.trim(),
+      });
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to set new password';
@@ -127,6 +132,20 @@ export default function Login() {
                 )}
 
                 <form onSubmit={handleNewPassword} className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                      Your Name
+                    </label>
+                    <input
+                      type="text"
+                      value={givenName}
+                      onChange={e => setGivenName(e.target.value)}
+                      placeholder="e.g. Philip"
+                      autoComplete="given-name"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm font-medium outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 transition-all"
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                       New Password

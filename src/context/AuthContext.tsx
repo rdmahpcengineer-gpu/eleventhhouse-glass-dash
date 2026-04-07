@@ -10,6 +10,7 @@ interface ChallengeState {
   challengeName: string;
   session: string;
   email: string;
+  requiredAttributes: string[];
 }
 
 interface AuthContextType {
@@ -20,7 +21,7 @@ interface AuthContextType {
   accessToken: string | undefined;
   challenge: ChallengeState | null;
   login: (email: string, password: string) => Promise<void>;
-  completeNewPassword: (newPassword: string) => Promise<void>;
+  completeNewPassword: (newPassword: string, attributes?: Record<string, string>) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<{ needsConfirmation: boolean }>;
   confirmSignup: (email: string, code: string) => Promise<void>;
   logout: () => void;
@@ -163,10 +164,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (data.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
+      // Extract required attributes from challenge parameters
+      const requiredAttrs: string[] = data.ChallengeParameters?.requiredAttributes
+        ? JSON.parse(data.ChallengeParameters.requiredAttributes)
+        : [];
       setChallenge({
         challengeName: 'NEW_PASSWORD_REQUIRED',
         session: data.Session,
         email,
+        requiredAttributes: requiredAttrs,
       });
       return;
     }
@@ -181,15 +187,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     storeSession(data.AuthenticationResult);
   }
 
-  async function completeNewPassword(newPassword: string) {
+  async function completeNewPassword(newPassword: string, attributes?: Record<string, string>) {
     if (!challenge) throw new Error('No active challenge');
     setError(null);
+
+    // Build challenge responses with required user attributes
+    const challengeResponses: Record<string, string> = {
+      USERNAME: challenge.email,
+      NEW_PASSWORD: newPassword,
+    };
+
+    // Add user attributes prefixed with userAttributes.
+    if (attributes) {
+      for (const [key, value] of Object.entries(attributes)) {
+        challengeResponses[`userAttributes.${key}`] = value;
+      }
+    }
+
     const data = await cognitoRequest('RespondToAuthChallenge', {
       ChallengeName: 'NEW_PASSWORD_REQUIRED',
-      ChallengeResponses: {
-        USERNAME: challenge.email,
-        NEW_PASSWORD: newPassword,
-      },
+      ChallengeResponses: challengeResponses,
       Session: challenge.session,
       ClientId: CLIENT_ID,
     });
