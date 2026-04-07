@@ -50,8 +50,12 @@ export default function Login() {
     setSubmitting(true);
     setError('');
     try {
+      const nameParts = givenName.trim().split(/\s+/);
+      const first = nameParts[0];
+      const last = nameParts.length > 1 ? nameParts.slice(1).join(' ') : first;
       await completeNewPassword(newPassword, {
-        given_name: givenName.trim(),
+        given_name: first,
+        family_name: last,
         name: givenName.trim(),
       });
       navigate('/dashboard', { replace: true });
