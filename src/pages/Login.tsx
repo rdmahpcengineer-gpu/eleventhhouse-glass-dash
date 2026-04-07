@@ -6,7 +6,7 @@ export default function Login() {
   const { login, isAuthenticated, isLoading, challenge, completeNewPassword } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(challenge?.email || '');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -61,6 +61,14 @@ export default function Login() {
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to set new password';
+      if (msg.includes('session is expired') || msg.includes('Invalid session')) {
+        // Session expired — need to re-authenticate to get a fresh session
+        sessionStorage.removeItem('ehcx_challenge');
+        setError('Session expired. Please sign in again to set your new password.');
+        // Small delay so user sees the message before form switches
+        setTimeout(() => window.location.reload(), 2000);
+        return;
+      }
       setError(msg);
     }
     setSubmitting(false);
