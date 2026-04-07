@@ -449,9 +449,14 @@ function Sidebar({ nav, active, setActive, user, role, onLogout }) {
         ))}
       </nav>
       <div style={{ padding: "12px 10px", borderTop: `1px solid ${T.border}` }}>
-        <div style={{ padding: "8px 11px", marginBottom: 6 }}>
-          <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{user?.user_metadata?.full_name || user?.email?.split("@")[0]}</div>
-          <div style={{ fontSize: 11, color: T.textGhost, marginTop: 1 }}>{user?.email}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 11px", marginBottom: 6 }}>
+          <div style={{ width: 34, height: 34, borderRadius: "50%", background: `linear-gradient(135deg, ${T.accent}, ${T.purple})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff", flexShrink: 0, textTransform: "uppercase" }}>
+            {(user?.user_metadata?.full_name || user?.email || "?").charAt(0)}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, color: T.text, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.user_metadata?.full_name || user?.email?.split("@")[0]}</div>
+            <div style={{ fontSize: 11, color: T.textGhost, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+          </div>
         </div>
         <button onClick={onLogout} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "7px 11px", border: "none", borderRadius: 7, background: "transparent", color: T.textGhost, fontSize: 12, cursor: "pointer", fontFamily: font }}>{I.out} Sign Out</button>
       </div>
