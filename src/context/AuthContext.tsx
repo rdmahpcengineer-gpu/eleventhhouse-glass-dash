@@ -21,6 +21,7 @@ interface AuthContextType {
   accessToken: string | undefined;
   challenge: ChallengeState | null;
   login: (email: string, password: string) => Promise<void>;
+  devLogin: () => void;
   completeNewPassword: (newPassword: string, attributes?: Record<string, string>) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<{ needsConfirmation: boolean }>;
   confirmSignup: (email: string, code: string) => Promise<void>;
@@ -247,6 +248,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }
 
+  function devLogin() {
+    const devUser: User = {
+      email: 'dev@ehcx.ai',
+      name: 'Dev User',
+      sub: 'dev-local-user',
+    };
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(devUser));
+    localStorage.setItem(STORAGE_KEYS.idToken, 'dev-token');
+    localStorage.setItem(STORAGE_KEYS.accessToken, 'dev-access-token');
+    setUser(devUser);
+    setIdToken('dev-token');
+    setAccessToken('dev-access-token');
+  }
+
   function logout() {
     clearSession();
   }
@@ -260,6 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       accessToken,
       challenge,
       login,
+      devLogin,
       completeNewPassword,
       signup,
       confirmSignup,

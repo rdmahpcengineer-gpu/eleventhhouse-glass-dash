@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-  const { login, isAuthenticated, isLoading, challenge, completeNewPassword } = useAuth();
+  const { login, devLogin, isAuthenticated, isLoading, challenge, completeNewPassword } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState(challenge?.email || '');
@@ -272,6 +272,14 @@ export default function Login() {
               </>
             )}
           </div>
+
+          {/* Dev bypass */}
+          <button
+            onClick={() => { devLogin(); navigate('/dashboard', { replace: true }); }}
+            className="mt-4 w-full py-3 text-xs font-mono text-slate-600 hover:text-slate-300 border border-dashed border-white/10 hover:border-white/20 rounded-xl transition-colors"
+          >
+            Dev Login (skip auth)
+          </button>
         </div>
       </div>
     </div>
