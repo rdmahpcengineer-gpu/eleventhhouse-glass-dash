@@ -135,6 +135,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       AuthParameters: { USERNAME: email, PASSWORD: password },
       ClientId: CLIENT_ID,
     });
+
+    if (!data.AuthenticationResult) {
+      // Cognito returned a challenge instead of tokens
+      const challenge = data.ChallengeName || 'unknown challenge';
+      throw new Error(
+        `Authentication requires additional step: ${challenge}. Please contact your administrator or complete the challenge in the AWS Console.`
+      );
+    }
+
     storeSession(data.AuthenticationResult);
   }
 
