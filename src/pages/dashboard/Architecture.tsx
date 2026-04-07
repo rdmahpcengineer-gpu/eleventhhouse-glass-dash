@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-
+// force-reload
 const ARCHITECTURE_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>

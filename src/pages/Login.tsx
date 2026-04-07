@@ -3,14 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-  const { login, devLogin, isAuthenticated, isLoading, challenge, completeNewPassword } = useAuth();
+  const { login, devLogin, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState(challenge?.email || '');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [givenName, setGivenName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,47 +25,6 @@ export default function Login() {
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Sign in failed';
-      if (msg.includes('USER_PASSWORD_AUTH') || msg.includes('flow not enabled')) {
-        setError('Password auth is not enabled on this user pool. Please enable USER_PASSWORD_AUTH in Cognito App Client settings.');
-      } else if (msg.includes('NotAuthorizedException') || msg.includes('Incorrect username or password')) {
-        setError('Incorrect email or password.');
-      } else if (msg.includes('UserNotConfirmedException')) {
-        setError('Account not confirmed. Check your email for a verification code, then sign up again to confirm.');
-      } else {
-        setError(msg);
-      }
-    }
-    setSubmitting(false);
-  }
-
-  async function handleNewPassword(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newPassword) { setError('Please enter a new password.'); return; }
-    if (newPassword !== confirmNewPassword) { setError('Passwords do not match.'); return; }
-    if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
-    if (!givenName.trim()) { setError('Please enter your name.'); return; }
-    setSubmitting(true);
-    setError('');
-    try {
-      const nameParts = givenName.trim().split(/\s+/);
-      const first = nameParts[0];
-      const last = nameParts.length > 1 ? nameParts.slice(1).join(' ') : first;
-      await completeNewPassword(newPassword, {
-        given_name: first,
-        family_name: last,
-        name: givenName.trim(),
-      });
-      navigate('/dashboard', { replace: true });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to set new password';
-      if (msg.includes('session is expired') || msg.includes('Invalid session')) {
-        // Session expired — need to re-authenticate to get a fresh session
-        sessionStorage.removeItem('ehcx_challenge');
-        setError('Session expired. Please sign in again to set your new password.');
-        // Small delay so user sees the message before form switches
-        setTimeout(() => window.location.reload(), 2000);
-        return;
-      }
       setError(msg);
     }
     setSubmitting(false);
@@ -132,145 +88,73 @@ export default function Login() {
           </div>
 
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
-            {challenge ? (
-              <>
-                <h1 className="text-3xl font-black text-white mb-1 tracking-tight">Set New Password</h1>
-                <p className="text-slate-400 text-sm mb-8">Your account requires a new password before you can sign in.</p>
+            <h1 className="text-3xl font-black text-white mb-1 tracking-tight">Welcome back</h1>
+            <p className="text-slate-400 text-sm mb-8">Sign in to your EHCX dashboard</p>
 
-                {error && (
-                  <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
-                    <p className="text-red-400 text-sm font-medium">{error}</p>
-                  </div>
-                )}
-
-                <form onSubmit={handleNewPassword} className="space-y-5">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                      Your Name
-                    </label>
-                    <input
-                      type="text"
-                      value={givenName}
-                      onChange={e => setGivenName(e.target.value)}
-                      placeholder="e.g. Philip"
-                      autoComplete="given-name"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm font-medium outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 transition-all"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                      New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={e => setNewPassword(e.target.value)}
-                      placeholder="Min. 8 characters"
-                      autoComplete="new-password"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm font-medium outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 transition-all"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                      Confirm Password
-                    </label>
-                    <input
-                      type="password"
-                      value={confirmNewPassword}
-                      onChange={e => setConfirmNewPassword(e.target.value)}
-                      placeholder="Re-enter password"
-                      autoComplete="new-password"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm font-medium outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 transition-all"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl font-bold text-sm tracking-wider uppercase shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Setting password...
-                      </>
-                    ) : 'Set Password & Sign In'}
-                  </button>
-                </form>
-              </>
-            ) : (
-              <>
-                <h1 className="text-3xl font-black text-white mb-1 tracking-tight">Welcome back</h1>
-                <p className="text-slate-400 text-sm mb-8">Sign in to your EHCX dashboard</p>
-
-                {error && (
-                  <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
-                    <p className="text-red-400 text-sm font-medium">{error}</p>
-                  </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="you@company.com"
-                      autoComplete="email"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm font-medium outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 transition-all"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      autoComplete="current-password"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm font-medium outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 transition-all"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl font-bold text-sm tracking-wider uppercase shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Signing in...
-                      </>
-                    ) : 'Sign In'}
-                  </button>
-                </form>
-
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-white/10" />
-                  </div>
-                  <div className="relative flex justify-center">
-                    <span className="px-3 bg-transparent text-xs text-slate-600 font-medium">powered by AWS Cognito</span>
-                  </div>
-                </div>
-
-                <p className="text-center text-sm text-slate-500">
-                  Don't have an account?{' '}
-                  <Link to="/signup" className="font-bold text-sky-400 hover:text-sky-300 transition-colors">
-                    Start free trial
-                  </Link>
-                </p>
-              </>
+            {error && (
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
+                <p className="text-red-400 text-sm font-medium">{error}</p>
+              </div>
             )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  autoComplete="email"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm font-medium outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 text-sm font-medium outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 transition-all"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full h-12 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl font-bold text-sm tracking-wider uppercase shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Signing in...
+                  </>
+                ) : 'Sign In'}
+              </button>
+            </form>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="px-3 bg-transparent text-xs text-slate-600 font-medium">powered by Supabase</span>
+              </div>
+            </div>
+
+            <p className="text-center text-sm text-slate-500">
+              Don't have an account?{' '}
+              <Link to="/signup" className="font-bold text-sky-400 hover:text-sky-300 transition-colors">
+                Start free trial
+              </Link>
+            </p>
           </div>
 
           {/* Dev bypass */}

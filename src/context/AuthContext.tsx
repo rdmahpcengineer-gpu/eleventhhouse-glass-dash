@@ -1,269 +1,110 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createClient, Session, User as SupabaseUser } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface User {
   email?: string;
   name?: string;
-  sub?: string;
-}
-
-interface ChallengeState {
-  challengeName: string;
-  session: string;
-  email: string;
-  requiredAttributes: string[];
+  id?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  idToken: string | undefined;
-  accessToken: string | undefined;
-  challenge: ChallengeState | null;
+  session: Session | null;
   login: (email: string, password: string) => Promise<void>;
-  devLogin: () => void;
-  completeNewPassword: (newPassword: string, attributes?: Record<string, string>) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<{ needsConfirmation: boolean }>;
-  confirmSignup: (email: string, code: string) => Promise<void>;
+  devLogin: () => void;
   logout: () => void;
   error: Error | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const REGION = 'us-east-1';
-const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID as string;
-const COGNITO_ENDPOINT = `https://cognito-idp.${REGION}.amazonaws.com/`;
+const DEV_USER_KEY = 'ehcx_dev_user';
 
-const STORAGE_KEYS = {
-  idToken: 'ehcx_id_token',
-  accessToken: 'ehcx_access_token',
-  refreshToken: 'ehcx_refresh_token',
-  user: 'ehcx_user',
-};
-
-async function cognitoRequest(target: string, body: object) {
-  const res = await fetch(COGNITO_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-amz-json-1.1',
-      'X-Amz-Target': `AWSCognitoIdentityProviderService.${target}`,
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || data.__type || 'Authentication failed');
-  }
-  return data;
-}
-
-function parseJwt(token: string): Record<string, unknown> {
-  try {
-    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-    return JSON.parse(atob(base64));
-  } catch {
-    return {};
-  }
+function mapSupabaseUser(su: SupabaseUser): User {
+  return {
+    email: su.email,
+    name: su.user_metadata?.name || su.user_metadata?.full_name || su.email,
+    id: su.id,
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [idToken, setIdToken] = useState<string | undefined>(undefined);
-  const [accessToken, setAccessToken] = useState<string | undefined>(undefined);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [challenge, setChallengeState] = useState<ChallengeState | null>(() => {
-    try {
-      const stored = sessionStorage.getItem('ehcx_challenge');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
 
-  function setChallenge(c: ChallengeState | null) {
-    setChallengeState(c);
-    if (c) {
-      sessionStorage.setItem('ehcx_challenge', JSON.stringify(c));
-    } else {
-      sessionStorage.removeItem('ehcx_challenge');
-    }
-  }
-
-  // Restore session on mount
   useEffect(() => {
-    const storedToken = localStorage.getItem(STORAGE_KEYS.idToken);
-    const storedAccess = localStorage.getItem(STORAGE_KEYS.accessToken);
-    const storedUser = localStorage.getItem(STORAGE_KEYS.user);
-    if (storedToken && storedUser) {
+    // Check for dev user first
+    const devUser = localStorage.getItem(DEV_USER_KEY);
+    if (devUser) {
       try {
-        const claims = parseJwt(storedToken);
-        const now = Math.floor(Date.now() / 1000);
-        if ((claims.exp as number) > now) {
-          setIdToken(storedToken);
-          setAccessToken(storedAccess || undefined);
-          setUser(JSON.parse(storedUser));
-        } else {
-          // Token expired — try refresh
-          const refresh = localStorage.getItem(STORAGE_KEYS.refreshToken);
-          if (refresh) {
-            refreshSession(refresh).catch(() => clearSession());
-          } else {
-            clearSession();
-          }
-        }
+        setUser(JSON.parse(devUser));
+        setIsLoading(false);
+        return;
       } catch {
-        clearSession();
+        localStorage.removeItem(DEV_USER_KEY);
       }
     }
-    setIsLoading(false);
-  }, []);
 
-  function clearSession() {
-    Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
-    setUser(null);
-    setIdToken(undefined);
-    setAccessToken(undefined);
-  }
-
-  async function refreshSession(refreshToken: string) {
-    const data = await cognitoRequest('InitiateAuth', {
-      AuthFlow: 'REFRESH_TOKEN_AUTH',
-      AuthParameters: { REFRESH_TOKEN: refreshToken },
-      ClientId: CLIENT_ID,
+    // Get initial session from Supabase
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(s);
+      setUser(s?.user ? mapSupabaseUser(s.user) : null);
+      setIsLoading(false);
     });
-    const result = data.AuthenticationResult;
-    storeSession(result);
-  }
 
-  function storeSession(result: { IdToken: string; AccessToken: string; RefreshToken?: string }) {
-    const claims = parseJwt(result.IdToken);
-    const u: User = {
-      email: claims.email as string,
-      name: (claims.name || claims['cognito:username'] || claims.email) as string,
-      sub: claims.sub as string,
-    };
-    localStorage.setItem(STORAGE_KEYS.idToken, result.IdToken);
-    localStorage.setItem(STORAGE_KEYS.accessToken, result.AccessToken);
-    if (result.RefreshToken) {
-      localStorage.setItem(STORAGE_KEYS.refreshToken, result.RefreshToken);
-    }
-    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(u));
-    setIdToken(result.IdToken);
-    setAccessToken(result.AccessToken);
-    setUser(u);
-  }
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s);
+      setUser(s?.user ? mapSupabaseUser(s.user) : null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   async function login(email: string, password: string) {
     setError(null);
-    setChallenge(null);
-    const data = await cognitoRequest('InitiateAuth', {
-      AuthFlow: 'USER_PASSWORD_AUTH',
-      AuthParameters: { USERNAME: email, PASSWORD: password },
-      ClientId: CLIENT_ID,
-    });
-
-    if (data.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
-      // Extract required attributes from challenge parameters
-      const requiredAttrs: string[] = data.ChallengeParameters?.requiredAttributes
-        ? JSON.parse(data.ChallengeParameters.requiredAttributes)
-        : [];
-      setChallenge({
-        challengeName: 'NEW_PASSWORD_REQUIRED',
-        session: data.Session,
-        email,
-        requiredAttributes: requiredAttrs,
-      });
-      return;
-    }
-
-    if (!data.AuthenticationResult) {
-      const challengeName = data.ChallengeName || 'unknown challenge';
-      throw new Error(
-        `Authentication requires additional step: ${challengeName}. Please contact your administrator.`
-      );
-    }
-
-    storeSession(data.AuthenticationResult);
-  }
-
-  async function completeNewPassword(newPassword: string, attributes?: Record<string, string>) {
-    if (!challenge) throw new Error('No active challenge');
-    setError(null);
-
-    // Build challenge responses with required user attributes
-    const challengeResponses: Record<string, string> = {
-      USERNAME: challenge.email,
-      NEW_PASSWORD: newPassword,
-    };
-
-    // Add user attributes prefixed with userAttributes.
-    if (attributes) {
-      for (const [key, value] of Object.entries(attributes)) {
-        challengeResponses[`userAttributes.${key}`] = value;
-      }
-    }
-
-    const data = await cognitoRequest('RespondToAuthChallenge', {
-      ChallengeName: 'NEW_PASSWORD_REQUIRED',
-      ChallengeResponses: challengeResponses,
-      Session: challenge.session,
-      ClientId: CLIENT_ID,
-    });
-
-    if (!data.AuthenticationResult) {
-      throw new Error('Failed to complete password change');
-    }
-
-    setChallenge(null);
-    storeSession(data.AuthenticationResult);
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    if (err) throw new Error(err.message);
   }
 
   async function signup(email: string, password: string, name: string) {
     setError(null);
-    const nameParts = name.trim().split(/\s+/);
-    const givenName = nameParts[0];
-    const familyName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : givenName;
-    await cognitoRequest('SignUp', {
-      ClientId: CLIENT_ID,
-      Username: email,
-      Password: password,
-      UserAttributes: [
-        { Name: 'email', Value: email },
-        { Name: 'name', Value: name },
-        { Name: 'given_name', Value: givenName },
-        { Name: 'family_name', Value: familyName },
-      ],
+    const { error: err } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name, full_name: name },
+      },
     });
+    if (err) throw new Error(err.message);
     return { needsConfirmation: true };
-  }
-
-  async function confirmSignup(email: string, code: string) {
-    setError(null);
-    await cognitoRequest('ConfirmSignUp', {
-      ClientId: CLIENT_ID,
-      Username: email,
-      ConfirmationCode: code,
-    });
   }
 
   function devLogin() {
     const devUser: User = {
       email: 'dev@ehcx.ai',
       name: 'Dev User',
-      sub: 'dev-local-user',
+      id: 'dev-local-user',
     };
-    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(devUser));
-    localStorage.setItem(STORAGE_KEYS.idToken, 'dev-token');
-    localStorage.setItem(STORAGE_KEYS.accessToken, 'dev-access-token');
+    localStorage.setItem(DEV_USER_KEY, JSON.stringify(devUser));
     setUser(devUser);
-    setIdToken('dev-token');
-    setAccessToken('dev-access-token');
   }
 
-  function logout() {
-    clearSession();
+  async function logout() {
+    localStorage.removeItem(DEV_USER_KEY);
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
   }
 
   return (
@@ -271,14 +112,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isLoading,
       isAuthenticated: !!user,
-      idToken,
-      accessToken,
-      challenge,
+      session,
       login,
-      devLogin,
-      completeNewPassword,
       signup,
-      confirmSignup,
+      devLogin,
       logout,
       error,
     }}>
