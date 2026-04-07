@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const ARCHITECTURE_HTML = `<!DOCTYPE html>
 <html lang="en">
@@ -385,6 +385,7 @@ const BODY_CONTENT = `
 
 const Architecture: React.FC = () => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [iframeHeight, setIframeHeight] = useState(800);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -412,6 +413,19 @@ const Architecture: React.FC = () => {
       doc.write(BODY_CONTENT);
       doc.write('</body></html>');
       doc.close();
+
+      // Auto-resize iframe to fit content
+      const resizeIframe = () => {
+        if (doc.body) {
+          const height = doc.documentElement.scrollHeight || doc.body.scrollHeight;
+          if (height > 0) setIframeHeight(height + 32);
+        }
+      };
+
+      // Resize after content renders and fonts load
+      setTimeout(resizeIframe, 100);
+      setTimeout(resizeIframe, 500);
+      setTimeout(resizeIframe, 1500);
     };
 
     iframe.addEventListener('load', handleLoad);
@@ -422,12 +436,12 @@ const Architecture: React.FC = () => {
   }, []);
 
   return (
-    <div className="w-full h-full min-h-[calc(100vh-6rem)]">
+    <div className="w-full">
       <iframe
         ref={iframeRef}
         title="EHCx v2 Architecture Documentation"
         className="w-full border-0 rounded-xl bg-white"
-        style={{ height: 'calc(100vh - 6rem)', minHeight: '600px' }}
+        style={{ height: `${iframeHeight}px` }}
         sandbox="allow-same-origin"
       />
     </div>
