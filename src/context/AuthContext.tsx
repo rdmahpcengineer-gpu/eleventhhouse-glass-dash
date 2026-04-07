@@ -71,7 +71,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [challenge, setChallenge] = useState<ChallengeState | null>(null);
+  const [challenge, setChallengeState] = useState<ChallengeState | null>(() => {
+    try {
+      const stored = sessionStorage.getItem('ehcx_challenge');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  function setChallenge(c: ChallengeState | null) {
+    setChallengeState(c);
+    if (c) {
+      sessionStorage.setItem('ehcx_challenge', JSON.stringify(c));
+    } else {
+      sessionStorage.removeItem('ehcx_challenge');
+    }
+  }
 
   // Restore session on mount
   useEffect(() => {
