@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, devLogin, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -25,16 +25,7 @@ export default function Login() {
       navigate('/dashboard', { replace: true });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Sign in failed';
-      // Surface friendly messages for common Cognito errors
-      if (msg.includes('USER_PASSWORD_AUTH') || msg.includes('flow not enabled')) {
-        setError('Password auth is not enabled on this user pool. Please enable USER_PASSWORD_AUTH in Cognito App Client settings.');
-      } else if (msg.includes('NotAuthorizedException') || msg.includes('Incorrect username or password')) {
-        setError('Incorrect email or password.');
-      } else if (msg.includes('UserNotConfirmedException')) {
-        setError('Account not confirmed. Check your email for a verification code, then sign up again to confirm.');
-      } else {
-        setError(msg);
-      }
+      setError(msg);
     }
     setSubmitting(false);
   }
@@ -154,7 +145,7 @@ export default function Login() {
                 <div className="w-full border-t border-white/10" />
               </div>
               <div className="relative flex justify-center">
-                <span className="px-3 bg-transparent text-xs text-slate-600 font-medium">powered by AWS Cognito</span>
+                <span className="px-3 bg-transparent text-xs text-slate-600 font-medium">powered by Supabase</span>
               </div>
             </div>
 
@@ -165,6 +156,14 @@ export default function Login() {
               </Link>
             </p>
           </div>
+
+          {/* Dev bypass */}
+          <button
+            onClick={() => { devLogin(); navigate('/dashboard', { replace: true }); }}
+            className="mt-4 w-full py-3 text-xs font-mono text-slate-600 hover:text-slate-300 border border-dashed border-white/10 hover:border-white/20 rounded-xl transition-colors"
+          >
+            Dev Login (skip auth)
+          </button>
         </div>
       </div>
     </div>

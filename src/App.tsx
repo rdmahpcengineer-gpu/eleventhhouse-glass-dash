@@ -183,6 +183,9 @@ const App: React.FC = () => {
             <Route path="architecture" element={<Architecture />} />
           </Route>
 
+          {/* Public Architecture Docs */}
+          <Route path="/architecture" element={<Architecture />} />
+
           {/* Investor Portal — public route with its own Supabase auth */}
           <Route path="/investor" element={<InvestorPortal />} />
 
