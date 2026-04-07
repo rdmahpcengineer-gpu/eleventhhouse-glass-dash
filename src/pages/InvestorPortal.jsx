@@ -158,6 +158,45 @@ class SupabaseClient {
       method: "POST", body: JSON.stringify({ expiresIn: 3600 })
     });
   }
+
+  // ─── REALTIME ───────────────────────────────────────────
+  subscribe(table, callback) {
+    const wsUrl = this.url.replace(/^http/, "ws") + "/realtime/v1/websocket?apikey=" + this.key + "&vsn=1.0.0";
+    const ws = new WebSocket(wsUrl);
+    const topic = `realtime:public:${table}`;
+    let heartbeatRef = 0;
+    let heartbeatInterval = null;
+
+    ws.onopen = () => {
+      // Join the channel
+      ws.send(JSON.stringify({
+        topic, event: "phx_join",
+        payload: { config: { broadcast: { self: true }, postgres_changes: [{ event: "*", schema: "public", table }] } },
+        ref: "1"
+      }));
+      // Keep-alive heartbeat every 30s
+      heartbeatInterval = setInterval(() => {
+        ws.send(JSON.stringify({ topic: "phoenix", event: "heartbeat", payload: {}, ref: String(++heartbeatRef) }));
+      }, 30000);
+    };
+
+    ws.onmessage = (evt) => {
+      try {
+        const msg = JSON.parse(evt.data);
+        if (msg.event === "postgres_changes") {
+          callback(msg.payload);
+        }
+      } catch {}
+    };
+
+    ws.onerror = () => {};
+    ws.onclose = () => { if (heartbeatInterval) clearInterval(heartbeatInterval); };
+
+    return () => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      ws.close();
+    };
+  }
 }
 
 const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1189,6 +1228,17 @@ export default function InvestorPortal() {
     }
     setLoading(false);
   }, []);
+
+  // ─── REALTIME SUBSCRIPTIONS ─────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    const unsubs = [
+      supabase.subscribe("investors", () => refetchInvestors()),
+      supabase.subscribe("safe_instruments", () => refetchSafes()),
+      supabase.subscribe("documents", () => refetchDocs()),
+    ];
+    return () => unsubs.forEach(fn => fn());
+  }, [user]);
 
   const handleLogin = (u) => {
     setUser(u);
