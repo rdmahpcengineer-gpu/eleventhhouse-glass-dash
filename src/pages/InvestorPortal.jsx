@@ -1224,7 +1224,13 @@ export default function InvestorPortal() {
     const restored = supabase.restoreSession();
     if (restored) {
       setUser(supabase.user);
-      if (supabase.user?.id === FOUNDER_AUTH_ID) setRole("admin");
+      if (supabase.user?.id === FOUNDER_AUTH_ID) {
+        setRole("admin");
+        setActive("overview");
+      } else {
+        setRole("investor");
+        setActive("dashboard");
+      }
     }
     setLoading(false);
   }, []);
