@@ -68,10 +68,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 .hero-meta { display: flex; gap: 24px; margin-top: 28px; flex-wrap: wrap; }
 .hero-meta-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text3); font-family: var(--mono); }
 .hero-meta-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.toc { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px 0; overflow-x: auto; }
-.toc-inner { display: flex; gap: 4px; max-width: 1080px; margin: 0 auto; padding: 0 32px; }
-.toc a { font-size: 12px; font-family: var(--mono); color: var(--text3); text-decoration: none; padding: 6px 12px; border-radius: 20px; white-space: nowrap; transition: all 0.2s; }
-.toc a:hover { color: var(--accent); background: var(--accent-bg); }
+.toc { position: sticky; top: 0; z-index: 100; background: var(--bg2); border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent); padding: 0; overflow-x: auto; box-shadow: 0 4px 24px rgba(83,74,183,0.10); }
+.toc-inner { display: flex; align-items: center; gap: 4px; max-width: 1080px; margin: 0 auto; padding: 10px 32px; }
+.toc-label { font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); background: var(--accent-bg); border: 1px solid var(--accent); padding: 4px 10px; border-radius: 6px; white-space: nowrap; margin-right: 12px; font-weight: 600; flex-shrink: 0; }
+.toc a { font-size: 12px; font-family: var(--mono); color: var(--text3); text-decoration: none; padding: 6px 14px; border-radius: 20px; white-space: nowrap; transition: all 0.2s; border: 1px solid transparent; }
+.toc a:hover { color: var(--accent); background: var(--accent-bg); border-color: var(--accent); }
 section { padding: 64px 0; border-bottom: 1px solid var(--border); }
 section:last-child { border-bottom: none; }
 .section-label { font-family: var(--mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
@@ -160,6 +161,7 @@ const BODY_CONTENT = `
 
 <nav class="toc">
 <div class="toc-inner">
+  <span class="toc-label">&#9776; Navigate</span>
   <a href="#overview">Overview</a>
   <a href="#layers">Six layers</a>
   <a href="#pipeline">Agent pipeline</a>
