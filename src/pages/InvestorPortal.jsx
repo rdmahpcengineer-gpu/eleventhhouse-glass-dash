@@ -426,11 +426,24 @@ function AuthScreen({ onLogin }) {
   );
 }
 
+// ─── MOBILE HOOK ────────────────────────────────────────────
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < breakpoint);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 // ─── SIDEBAR ────────────────────────────────────────────────
-function Sidebar({ nav, active, setActive, user, role, onLogout }) {
-  return (
-    <div style={{ width: 224, minHeight: "100vh", background: T.bgCard, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-      <div style={{ padding: "18px 18px 16px", borderBottom: `1px solid ${T.border}` }}>
+function Sidebar({ nav, active, setActive, user, role, onLogout, mobileOpen, onCloseMobile }) {
+  const isMobile = useIsMobile();
+
+  const sidebarContent = (
+    <div style={{ width: isMobile ? 260 : 224, height: "100%", minHeight: isMobile ? "auto" : "100vh", background: T.bgCard, borderRight: isMobile ? "none" : `1px solid ${T.border}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+      <div style={{ padding: "18px 18px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
           {I.logo}
           <div>
@@ -438,10 +451,15 @@ function Sidebar({ nav, active, setActive, user, role, onLogout }) {
             <div style={{ fontSize: 10, color: role === "admin" ? T.amber : T.accent, fontWeight: 700, letterSpacing: "0.04em" }}>{role === "admin" ? "ADMIN PANEL" : "INVESTOR"}</div>
           </div>
         </div>
+        {isMobile && (
+          <button onClick={onCloseMobile} style={{ background: "none", border: "none", color: T.textDim, cursor: "pointer", padding: 4 }}>
+            {I.x}
+          </button>
+        )}
       </div>
       <nav style={{ flex: 1, padding: "12px 10px" }}>
         {nav.map(item => (
-          <button key={item.id} onClick={() => setActive(item.id)}
+          <button key={item.id} onClick={() => { setActive(item.id); if (isMobile) onCloseMobile(); }}
             style={{ display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "9px 11px", marginBottom: 2, border: "none", borderRadius: 8, background: active === item.id ? T.accentDim : "transparent", color: active === item.id ? T.accent : T.textDim, fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.12s", textAlign: "left", fontFamily: font }}>
             {item.icon}{item.label}
             {item.badge ? <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, background: T.amberDim, color: T.amber }}>{item.badge}</span> : null}
@@ -460,6 +478,20 @@ function Sidebar({ nav, active, setActive, user, role, onLogout }) {
       </div>
     </div>
   );
+
+  if (isMobile) {
+    if (!mobileOpen) return null;
+    return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex" }}>
+        <div onClick={onCloseMobile} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(2px)" }}/>
+        <div style={{ position: "relative", zIndex: 1, height: "100vh", overflowY: "auto", animation: "slideIn 0.2s ease" }}>
+          {sidebarContent}
+        </div>
+      </div>
+    );
+  }
+
+  return sidebarContent;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -477,13 +509,13 @@ function AdminOverview({ investors, safes, documents, setActive }) {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: T.text, margin: "0 0 4px" }}>Admin Dashboard</h1>
         <p style={{ color: T.textDim, fontSize: 13, margin: 0 }}>Manage investors, SAFEs, and documents for {COMPANY_NAME}</p>
       </div>
-      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 28 }}>
+      <div className="eh-stat-grid" style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 28 }}>
         <Stat label="Total Investors" value={investors.length} sub={`${activeInvestors} active`} icon={I.users} color={T.accent}/>
         <Stat label="SAFEs Issued" value={safes.length} sub={`$${totalRaised.toLocaleString()} funded`} icon={I.dollar} color={T.green}/>
         <Stat label="Documents" value={documents.length} sub={`${pendingSigs} pending sig`} icon={I.file} color={T.purple}/>
         <Stat label="Round Target" value="$30K" sub="$1.5M cap" icon={I.shield} color={T.amber}/>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div className="eh-admin-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <Card>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: "0 0 16px" }}>Quick Actions</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -985,7 +1017,7 @@ function InvestorDashboard({ setActive, safes }) {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: T.text, margin: "0 0 4px" }}>Dashboard</h1>
         <p style={{ color: T.textDim, fontSize: 13, margin: 0 }}>Your investment overview for {COMPANY_NAME}</p>
       </div>
-      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 28 }}>
+      <div className="eh-stat-grid" style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 28 }}>
         <Stat label="Valuation Cap" value="$1.5M" sub="Pre-money" icon={I.shield} color={T.accent}/>
         <Stat label="Your Investment" value={mySafe ? `$${Number(mySafe.investment_amount).toLocaleString()}` : "—"} sub={mySafe?.status || "No SAFE yet"} icon={I.dollar} color={T.green}/>
         <Stat label="Discount Rate" value="15%" sub="To next round" icon={I.bar} color={T.purple}/>
@@ -1007,7 +1039,7 @@ function InvestorDashboard({ setActive, safes }) {
           ))}
         </div>
       </Card>
-      <div style={{ display: "flex", gap: 10 }}>
+      <div className="eh-cta-row" style={{ display: "flex", gap: 10 }}>
         {[
           { l: "View Cap Table", v: "cap_table", i: I.bar, c: T.accent },
           { l: "Browse Documents", v: "documents", i: I.file, c: T.purple },
@@ -1218,6 +1250,8 @@ export default function InvestorPortal() {
   const [role, setRole] = useState("investor");
   const [active, setActive] = useState("overview");
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const { data: investors, refetch: refetchInvestors } = useSupabase("investors", { order: "created_at.desc" });
   const { data: safes, refetch: refetchSafes } = useSupabase("safe_instruments", { order: "created_at.desc" });
@@ -1315,19 +1349,41 @@ export default function InvestorPortal() {
   const views = role === "admin" ? adminViews : investorViews;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: T.bg, fontFamily: font, color: T.text }}>
+    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", minHeight: "100vh", background: T.bg, fontFamily: font, color: T.text }}>
       <link href={fontLink} rel="stylesheet"/>
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
         @keyframes modalIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+        @keyframes slideIn { from { transform:translateX(-100%); } to { transform:translateX(0); } }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: ${T.bg}; }
         ::-webkit-scrollbar-thumb { background: ${T.border}; border-radius: 3px; }
         select option { background: ${T.bgCard}; color: ${T.text}; }
+        @media (max-width: 768px) {
+          .eh-main-content { padding: 16px 14px !important; max-height: none !important; }
+          .eh-stat-grid { flex-direction: column !important; }
+          .eh-stat-grid > * { min-width: 0 !important; }
+          .eh-cta-row { flex-direction: column !important; }
+          .eh-cta-row > * { width: 100% !important; justify-content: center !important; }
+          .eh-admin-grid { grid-template-columns: 1fr !important; }
+          .eh-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+          .eh-table-wrap table { min-width: 500px; }
+        }
       `}</style>
-      <Sidebar nav={nav} active={active} setActive={setActive} user={user} role={role} onLogout={handleLogout}/>
-      <main style={{ flex: 1, padding: "28px 36px", overflowY: "auto", maxHeight: "100vh" }}>
+      {isMobile && (
+        <div style={{ position: "sticky", top: 0, zIndex: 999, background: T.bgCard, borderBottom: `1px solid ${T.border}`, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+            {I.logo}
+            <span style={{ fontSize: 14, fontWeight: 700, color: T.text }}>EleventhHouse</span>
+          </div>
+          <button onClick={() => setMobileMenuOpen(true)} style={{ background: "none", border: "none", color: T.text, cursor: "pointer", padding: 6 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        </div>
+      )}
+      <Sidebar nav={nav} active={active} setActive={setActive} user={user} role={role} onLogout={handleLogout} mobileOpen={mobileMenuOpen} onCloseMobile={() => setMobileMenuOpen(false)}/>
+      <main className="eh-main-content" style={{ flex: 1, padding: "28px 36px", overflowY: "auto", maxHeight: "100vh" }}>
         <div style={{ animation: "fadeUp 0.3s ease" }} key={active}>
           {views[active] || <div style={{ color: T.textDim }}>View not found</div>}
         </div>
