@@ -6,13 +6,21 @@ interface User {
   sub?: string;
 }
 
+interface ChallengeState {
+  challengeName: string;
+  session: string;
+  email: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   idToken: string | undefined;
   accessToken: string | undefined;
+  challenge: ChallengeState | null;
   login: (email: string, password: string) => Promise<void>;
+  completeNewPassword: (newPassword: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<{ needsConfirmation: boolean }>;
   confirmSignup: (email: string, code: string) => Promise<void>;
   logout: () => void;
@@ -63,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [challenge, setChallenge] = useState<ChallengeState | null>(null);
 
   // Restore session on mount
   useEffect(() => {
@@ -130,20 +139,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(email: string, password: string) {
     setError(null);
+    setChallenge(null);
     const data = await cognitoRequest('InitiateAuth', {
       AuthFlow: 'USER_PASSWORD_AUTH',
       AuthParameters: { USERNAME: email, PASSWORD: password },
       ClientId: CLIENT_ID,
     });
 
+    if (data.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
+      setChallenge({
+        challengeName: 'NEW_PASSWORD_REQUIRED',
+        session: data.Session,
+        email,
+      });
+      return;
+    }
+
     if (!data.AuthenticationResult) {
-      // Cognito returned a challenge instead of tokens
-      const challenge = data.ChallengeName || 'unknown challenge';
+      const challengeName = data.ChallengeName || 'unknown challenge';
       throw new Error(
-        `Authentication requires additional step: ${challenge}. Please contact your administrator or complete the challenge in the AWS Console.`
+        `Authentication requires additional step: ${challengeName}. Please contact your administrator.`
       );
     }
 
+    storeSession(data.AuthenticationResult);
+  }
+
+  async function completeNewPassword(newPassword: string) {
+    if (!challenge) throw new Error('No active challenge');
+    setError(null);
+    const data = await cognitoRequest('RespondToAuthChallenge', {
+      ChallengeName: 'NEW_PASSWORD_REQUIRED',
+      ChallengeResponses: {
+        USERNAME: challenge.email,
+        NEW_PASSWORD: newPassword,
+      },
+      Session: challenge.session,
+      ClientId: CLIENT_ID,
+    });
+
+    if (!data.AuthenticationResult) {
+      throw new Error('Failed to complete password change');
+    }
+
+    setChallenge(null);
     storeSession(data.AuthenticationResult);
   }
 
@@ -181,7 +220,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user,
       idToken,
       accessToken,
+      challenge,
       login,
+      completeNewPassword,
       signup,
       confirmSignup,
       logout,
