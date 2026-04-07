@@ -161,40 +161,63 @@ class SupabaseClient {
 
   // ─── REALTIME ───────────────────────────────────────────
   subscribe(table, callback) {
-    const wsUrl = this.url.replace(/^http/, "ws") + "/realtime/v1/websocket?apikey=" + this.key + "&vsn=1.0.0";
-    const ws = new WebSocket(wsUrl);
+    const self = this;
     const topic = `realtime:public:${table}`;
     let heartbeatRef = 0;
     let heartbeatInterval = null;
+    let reconnectTimer = null;
+    let reconnectAttempts = 0;
+    let intentionalClose = false;
+    let ws = null;
 
-    ws.onopen = () => {
-      // Join the channel
-      ws.send(JSON.stringify({
-        topic, event: "phx_join",
-        payload: { config: { broadcast: { self: true }, postgres_changes: [{ event: "*", schema: "public", table }] } },
-        ref: "1"
-      }));
-      // Keep-alive heartbeat every 30s
-      heartbeatInterval = setInterval(() => {
-        ws.send(JSON.stringify({ topic: "phoenix", event: "heartbeat", payload: {}, ref: String(++heartbeatRef) }));
-      }, 30000);
-    };
+    function connect() {
+      const wsUrl = self.url.replace(/^http/, "ws") + "/realtime/v1/websocket?apikey=" + self.key + "&vsn=1.0.0";
+      ws = new WebSocket(wsUrl);
 
-    ws.onmessage = (evt) => {
-      try {
-        const msg = JSON.parse(evt.data);
-        if (msg.event === "postgres_changes") {
-          callback(msg.payload);
+      ws.onopen = () => {
+        reconnectAttempts = 0;
+        ws.send(JSON.stringify({
+          topic, event: "phx_join",
+          payload: { config: { broadcast: { self: true }, postgres_changes: [{ event: "*", schema: "public", table }] } },
+          ref: "1"
+        }));
+        heartbeatInterval = setInterval(() => {
+          ws.send(JSON.stringify({ topic: "phoenix", event: "heartbeat", payload: {}, ref: String(++heartbeatRef) }));
+        }, 30000);
+      };
+
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.event === "postgres_changes") {
+            callback(msg.payload);
+          }
+        } catch (err) {
+          console.error(`[Realtime] ${table} message parse error:`, err);
         }
-      } catch {}
-    };
+      };
 
-    ws.onerror = () => {};
-    ws.onclose = () => { if (heartbeatInterval) clearInterval(heartbeatInterval); };
+      ws.onerror = (evt) => {
+        console.error(`[Realtime] ${table} socket error:`, evt);
+      };
+
+      ws.onclose = () => {
+        if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+        if (intentionalClose) return;
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+        reconnectAttempts++;
+        console.warn(`[Realtime] ${table} disconnected, reconnecting in ${delay}ms (attempt ${reconnectAttempts})`);
+        reconnectTimer = setTimeout(connect, delay);
+      };
+    }
+
+    connect();
 
     return () => {
-      if (heartbeatInterval) clearInterval(heartbeatInterval);
-      ws.close();
+      intentionalClose = true;
+      if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      if (ws) ws.close();
     };
   }
 }
